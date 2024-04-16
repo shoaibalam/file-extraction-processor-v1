@@ -1,0 +1,103 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Values.pipelinedata.appName }}
+  name: {{ .Values.pipelinedata.appName }}
+spec:
+  progressDeadlineSeconds: 600
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: {{ .Values.pipelinedata.appName }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: {{ .Values.pipelinedata.appName }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - {{ .Values.pipelinedata.appName }}
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: {{ .Values.pipelinedata.appName }}
+          image: {{ .Values.pipelinedata.image }}
+          env:
+            - name: KAFKA_TRUSTSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kafkaSecretName }}
+                  key: {{ .Values.kafkaStorePwKey }}
+            - name: KAFKA_RBAC_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kafkaSecretName }}
+                  key: {{ .Values.kafkaSvcAccount }}
+            - name: KAFKA_RBAC_PW
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kafkaSecretName }}
+                  key: {{ .Values.kafkaSvcAccountPw }}
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: {{ .Values.resReqCpu }}
+              memory: {{ .Values.resReqMem }}
+            limits:
+              cpu: {{ .Values.resLimitCpu }}
+              memory: {{ .Values.resLimitMem }}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - name: filesvolume
+              mountPath: /files
+            - name: varlog
+              mountPath: /var/log
+            - name: kafka-truststore
+              mountPath: {{ .Values.kafkaTruststorePath }}
+              readOnly: true
+            - name: google-vision
+              mountPath: {{ .Values.googleVisionPath }}
+              readOnly: true
+          securityContext:
+              allowPrivilegeEscalation: false
+              privileged: false
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsGroup: {{ .Values.pipelinedata.containerGroupId }}
+        runAsNonRoot: true
+        runAsUser:  {{ .Values.pipelinedata.containerUserId }}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: filesvolume
+          persistentVolumeClaim:
+            claimName: {{ .Values.claimName }}
+        - name: varlog
+          emptyDir: {}
+        - name: google-vision
+          secret:
+            secretName: {{ .Values.googleSecretName }}
+        - name: kafka-truststore
+          secret:
+            secretName: {{ .Values.kafkaSecretName }}
+            items:
+            - key: {{ .Values.kafkaTruststoreFile }}
+              path: {{ .Values.kafkaTruststoreFile }}

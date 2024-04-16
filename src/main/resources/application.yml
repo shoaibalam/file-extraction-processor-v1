@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: placeHolder
+  database:
+    url: placeHolder
+    username: placeHolder
+    driverClassName: placeHolder
+
+  cloud:
+    stream:
+      kafka:
+        streams:
+          binder:
+            application-id: ${KAFKA_GROUP_ID}
+
+    function:
+      definition: ${STREAM_TO_PROCESS:processFileExtration}
+
+  kafka:
+    bootstrap-server: ${KAFKA_BOOTSTRAP_SERVER:}
+    properties:
+      security.protocol: ${SECURITY_PROTOCOL:}
+      ssl:
+        endpoint:
+          identification:
+            algorithm:
+    ssl:
+      key-password: ${KAFKA_TRUSTSTORE_PASSWORD:}
+      key-store-location: ${T_LOCATION:}
+      key-store-password: ${KAFKA_TRUSTSTORE_PASSWORD:}
+      trust-store-location: ${T_LOCATION:}
+      trust-store-password: ${KAFKA_TRUSTSTORE_PASSWORD:}
+      endpoint.identification.algorithm: ${END_POINT:SSL}
+
+    consumer:
+    producer:
+
+
+spring.cloud.stream.kafka.binder.log.cleaner.enable: true
+spring.cloud.stream.kafka.binder.broker: ${KAFKA_BOOTSTRAP_SERVER:}
+spring.cloud.stream.kafka.binder.configuration.default.key.serde: org.apache.kafka.common.serialization.Serde$StringSerde
+spring.cloud.stream.kafka.binder.configuration.default.value.serde: org.apache.kafka.common.serialization.Serde$StringSerde
+spring.cloud.stream.kafka.binder.configuration.num.stream.threads: ${KAFKA_CONFIG_NUM_STREAM_THREADS:1}
+
+
+spring.cloud.stream.binding.processFileExtration-in-0.distinction: ${EXTRACTED_DOCUMENTS_TOPIC:}
+spring.cloud.stream.kafka.streams.bindings.processFileExtration-in-0.consumer.valueSerde: org.apache.kafka.common.serialization.Serde$StringSerde
+spring.cloud.stream.kafka.streams.bindings.processFileExtration-in-0.consumer.application-id: ${KAFKA_GROUP_ID}
+spring.cloud.stream.kafka.streams.bindings.processFileExtration-in-0.consumer.batch-mode: true
+
+
+env:
+  name: ${ENV_NAME:dev}
+
+
+
